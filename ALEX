@@ -1,0 +1,1116 @@
+local OrionLib
+local success, err = pcall(function()
+    OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+end)
+if not success then
+    error("无法加载OrionLib: " .. err)
+    return
+end
+
+local player = game.Players.LocalPlayer
+local username = player.Name
+
+OrionLib:MakeNotification({
+    Name = "欢迎使用",
+    Content = "欢迎使用周南和宇合创脚本。\n请注意：不要滥用！",
+    Image = "rbxassetid://4483345998",
+    Time = 15
+})
+
+
+local Window = OrionLib:MakeWindow({Name = "周南和宇合创", HidePremium = false, SaveConfig = true, ConfigFolder = "ATMControl"})
+
+
+local AnnouncementTab = Window:MakeTab({Name = "公告列表", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+
+local Announcements = {
+    "欢迎使用周南和宇合创脚本，请合理使用功能！",
+    "新版本更新：添加了远程购物功能。",
+    "即将加入更多实用功能，敬请期待！",
+    "使用时请注意白名单检查，不要尝试非法操作。",
+    "反馈和建议请联系开发者。",
+    "当前服务器可能会有延迟，请耐心等待。",
+}
+
+
+for _, announcement in ipairs(Announcements) do
+    AnnouncementTab:AddLabel(announcement)
+end
+
+
+local MainTab = Window:MakeTab({Name = "鳄小想", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+local function createButton(tab, name, callback)
+    tab:AddButton({Name = name, Callback = callback})
+end
+
+
+local AmountInput
+MainTab:AddTextbox({
+    Name = "输入金额",
+    Default = "",
+    TextDisappear = false,
+    Callback = function(value)
+        AmountInput = tonumber(value)
+    end
+})
+
+
+local function handleTransaction(action)
+    if AmountInput and AmountInput > 0 then
+        game:GetService("ReplicatedStorage")[action]:FireServer(AmountInput)
+        print("已" .. (action == "ATMWithdraw" and "提款" or "存款") .. ": " .. AmountInput)
+    else
+        print("请输入有效的金额")
+    end
+end
+
+createButton(MainTab, "提款", function() handleTransaction("ATMWithdraw") end)
+createButton(MainTab, "存款", function() handleTransaction("ATMDeposit") end)
+
+
+local noclipEnabled = false
+
+createButton(MainTab, "穿墙 开/关", function()
+    noclipEnabled = not noclipEnabled
+    local connection
+    if noclipEnabled then
+        connection = game:GetService("RunService").Stepped:Connect(function()
+            for _, v in pairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") and v.CanCollide then
+                    v.CanCollide = false
+                end
+            end
+        end)
+        print("穿墙 已启用")
+    else
+        connection:Disconnect()
+        for _, v in pairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
+        print("穿墙 已禁用")
+    end
+end)
+
+
+MainTab:AddTextbox({
+    Name = "设置速度",
+    Default = "16",
+    TextDisappear = false,
+    Callback = function(value)
+        local speed = tonumber(value)
+        if speed and player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = speed
+            print("玩家速度已设置为: " .. speed)
+        else
+            print("请输入有效的速度值")
+        end
+    end
+})
+
+
+local espEnabled = false
+local espConnection = nil
+local espObjects = {}
+
+createButton(MainTab, "透视玩家", function()
+    espEnabled = not espEnabled
+    
+    if espEnabled then
+        
+        for _, esp in pairs(espObjects) do
+            if esp.gui then
+                esp.gui:Destroy()
+            end
+        end
+        espObjects = {}
+        
+        
+        local function createESP(targetPlayer)
+            if targetPlayer == player then return end
+            
+            local esp = {
+                player = targetPlayer,
+                gui = nil,
+                connection = nil
+            }
+            
+            local function updateESP()
+                if not esp.gui then
+                    esp.gui = Instance.new("BillboardGui")
+                    local textLabel = Instance.new("TextLabel")
+                    
+                    esp.gui.Name = "PlayerESP"
+                    esp.gui.Size = UDim2.new(0, 200, 0, 50)
+                    esp.gui.StudsOffset = Vector3.new(0, 2, 0)
+                    esp.gui.AlwaysOnTop = true
+                    
+                    textLabel.Parent = esp.gui
+                    textLabel.Size = UDim2.new(1, 0, 1, 0)
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    textLabel.TextStrokeTransparency = 0.5
+                    textLabel.TextScaled = true
+                end
+                
+                local character = targetPlayer.Character
+                if character then
+                    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    if humanoidRootPart and humanoid then
+                        esp.gui.Adornee = humanoidRootPart
+                        local textLabel = esp.gui:FindFirstChildOfClass("TextLabel")
+                        if textLabel then
+                            local distance = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and 
+                                (player.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude or 0
+                            textLabel.Text = string.format("%s\n距离: %.1f\n生命值: %.0f", 
+                                targetPlayer.Name, 
+                                distance,
+                                humanoid.Health)
+                        end
+                        esp.gui.Parent = humanoidRootPart
+                    end
+                end
+            end
+            
+            
+            updateESP()
+            
+            
+            esp.connection = targetPlayer.CharacterAdded:Connect(updateESP)
+            
+            espObjects[targetPlayer.Name] = esp
+        end
+        
+        
+        for _, p in pairs(game.Players:GetPlayers()) do
+            createESP(p)
+        end
+        
+        
+        espConnection = game.Players.PlayerAdded:Connect(function(newPlayer)
+            createESP(newPlayer)
+        end)
+        
+        
+        game.Players.PlayerRemoving:Connect(function(leavingPlayer)
+            local esp = espObjects[leavingPlayer.Name]
+            if esp then
+                if esp.gui then esp.gui:Destroy() end
+                if esp.connection then esp.connection:Disconnect() end
+                espObjects[leavingPlayer.Name] = nil
+            end
+        end)
+        
+        
+        spawn(function()
+            while espEnabled do
+                for _, esp in pairs(espObjects) do
+                    local character = esp.player.Character
+                    if character then
+                        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        if humanoidRootPart and humanoid and esp.gui then
+                            local textLabel = esp.gui:FindFirstChildOfClass("TextLabel")
+                            if textLabel then
+                                local distance = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and 
+                                    (player.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude or 0
+                                textLabel.Text = string.format("%s\n距离: %.1f\n生命值: %.0f", 
+                                    esp.player.Name, 
+                                    distance,
+                                    humanoid.Health)
+                            end
+                        end
+                    end
+                end
+                wait(0.1) 
+            end
+        end)
+        
+        OrionLib:MakeNotification({
+            Name = "透视系统",
+            Content = "透视功能已开启",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    else
+        
+        for _, esp in pairs(espObjects) do
+            if esp.gui then esp.gui:Destroy() end
+            if esp.connection then esp.connection:Disconnect() end
+        end
+        espObjects = {}
+        
+        if espConnection then
+            espConnection:Disconnect()
+            espConnection = nil
+        end
+        
+        OrionLib:MakeNotification({
+            Name = "透视系统",
+            Content = "透视功能已关闭",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+end)
+
+
+local TeleportTab = Window:MakeTab({Name = "传送地点", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+local TeleportLocations = {
+    ["人民影剧院"] = Vector3.new(6170.08, -110.80, -398.30),
+    ["拳击馆"] = Vector3.new(958.74, -96.90, -680.78),
+    ["顺天出租车有限公司大门"] = Vector3.new(985.56, 45.18, -41.06),
+    ["大酒店"] = Vector3.new(570.13, 51.82, -1014.36),
+    ["公寓"] = Vector3.new(1506.19, 45.70, -886.83),
+    ["下水道"] = Vector3.new(2407.21, -75.69, -1543.95),
+    ["月跑便利店"] = Vector3.new(366.2451171875, 45.988121032714844, -818.7373657226562),
+    ["老奶奶五金店"] = Vector3.new(1206.89892578125, 45.92694854736328, -729.1337280273438)
+}
+
+local selectedLocation
+
+TeleportTab:AddDropdown({
+    Name = "选择传送地点",
+    Default = "请选择一个地点",
+    Options = {"人民影剧院", "拳击馆", "顺天出租车有限公司大门", "大酒店", "公寓", "下水道", "月跑便利店", "老奶奶五金店"},
+    Callback = function(option)
+        selectedLocation = TeleportLocations[option]
+        print("已选择传送地点: " .. option)
+    end
+})
+
+createButton(TeleportTab, "传送", function()
+    if selectedLocation then
+        player.Character:SetPrimaryPartCFrame(CFrame.new(selectedLocation))
+        print("玩家已传送到: " .. tostring(selectedLocation))
+    else
+        print("请先选择一个传送地点")
+    end
+end)
+
+
+createButton(MainTab, "隐蔽模式", function()
+    
+    local character = player.Character
+
+    if character then
+        
+        local head = character:FindFirstChild("Head")
+
+        
+        if head then
+            
+            for _, child in ipairs(head:GetChildren()) do
+                if child:IsA("BillboardGui") or child.Name == "NameTag" then
+                    child:Destroy()
+                end
+            end
+            
+            
+            local hiddenTag = Instance.new("BillboardGui", head)
+            hiddenTag.Size = UDim2.new(1, 0, 1, 0)
+            hiddenTag.AlwaysOnTop = true
+            hiddenTag.Enabled = false 
+        end
+
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.DisplayName = "玩家" 
+        end
+
+        
+        player.UserId = 0
+        player:SetAttribute("UserId", "隐藏")
+        player:SetAttribute("UserIdDisplay", "隐藏")
+
+        print("隐蔽模式已启用：玩家的显示名称已更改，服务器ID已隐藏。")
+    else
+        print("无法找到玩家的角色。")
+    end
+end)
+
+
+local ShopTab = Window:MakeTab({Name = "远程购物", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+
+createButton(ShopTab, "购买绷带", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\232\141\175\229\186\151").items:FindFirstChild("\231\187\183\229\184\166"),
+        [3] = 30,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 绷带")
+end)
+
+
+createButton(ShopTab, "购买医疗包", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\232\141\175\229\186\151").items:FindFirstChild("\229\140\187\231\150\151\229\140\133"),
+        [3] = 75,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 医疗包")
+end)
+
+
+createButton(ShopTab, "购买止痛药", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\232\141\175\229\186\151").items:FindFirstChild("\230\173\162\231\151\155\232\141\175"),
+        [3] = 25,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 止痛药")
+end)
+
+
+createButton(ShopTab, "购买创口贴", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\232\141\175\229\186\151").items:FindFirstChild("\229\136\155\229\143\163\232\180\180"),
+        [3] = 20,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 创口贴")
+end)
+
+
+local ExecutionTab = Window:MakeTab({Name = "秒执行", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+
+local autoBandageEnabled = false
+local autoMedkitEnabled = false
+local autoPainkillerEnabled = false
+local autoPlasterEnabled = false
+
+
+local function fastUseItem(itemName, isEnabled)
+    local player = game:GetService("Players").LocalPlayer
+    local character = player.Character
+
+    local item = character:FindFirstChild(itemName)
+    if item and item:FindFirstChild("wear") then
+        while isEnabled() do
+            local args = {
+                [1] = character
+            }
+            item.wear:FireServer(unpack(args))
+            wait(0.1) 
+        end
+        print("自动使用" .. itemName .. "已停止.")
+    else
+        warn("未找到" .. itemName .. "或wear事件.")
+    end
+end
+
+
+ExecutionTab:AddToggle({
+    Name = "自动使用绷带",
+    Default = false,
+    Callback = function(value)
+        autoBandageEnabled = value
+        if autoBandageEnabled then
+            coroutine.wrap(function() fastUseItem("\231\187\183\229\184\166", function() return autoBandageEnabled end) end)()
+        end
+    end
+})
+
+
+ExecutionTab:AddToggle({
+    Name = "自动使用医疗包",
+    Default = false,
+    Callback = function(value)
+        autoMedkitEnabled = value
+        if autoMedkitEnabled then
+            coroutine.wrap(function() fastUseItem("\229\140\187\231\150\151\229\140\133", function() return autoMedkitEnabled end) end)()
+        end
+    end
+})
+
+
+ExecutionTab:AddToggle({
+    Name = "自动使用止痛药",
+    Default = false,
+    Callback = function(value)
+        autoPainkillerEnabled = value
+        if autoPainkillerEnabled then
+            coroutine.wrap(function() fastUseItem("\230\173\162\231\151\155\232\141\175", function() return autoPainkillerEnabled end) end)()
+        end
+    end
+})
+
+
+ExecutionTab:AddToggle({
+    Name = "自动使用创口贴",
+    Default = false,
+    Callback = function(value)
+        autoPlasterEnabled = value
+        if autoPlasterEnabled then
+            coroutine.wrap(function() fastUseItem("\229\136\155\229\143\163\232\180\180", function() return autoPlasterEnabled end) end)()
+        end
+    end
+})
+
+
+local ToolsTab = Window:MakeTab({Name = "工具栏购物", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+
+createButton(ToolsTab, "购买锤头", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\233\148\164\229\164\180"),
+        [3] = 70,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 锤头")
+end)
+
+
+createButton(ToolsTab, "购买斧头", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\230\150\167\229\164\180"),
+        [3] = 100,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 斧头")
+end)
+
+
+createButton(ToolsTab, "购买撬棍", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\230\146\172\230\163\141"),
+        [3] = 80,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 撬棍")
+end)
+
+
+createButton(ToolsTab, "购买扳手", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\230\137\179\230\137\139"),
+        [3] = 50,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 扳手")
+end)
+
+
+createButton(ToolsTab, "购买圆头扳手", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\229\156\134\229\164\180\230\137\179\230\137\139"),
+        [3] = 50,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 圆头扳手")
+end)
+
+
+createButton(ToolsTab, "购买工程锤", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\229\183\165\231\168\139\233\148\164"),
+        [3] = 125,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 工程锤")
+end)
+
+
+createButton(ToolsTab, "购买管道", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\231\174\161\233\129\147"),
+        [3] = 55,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 管道")
+end)
+
+
+createButton(ToolsTab, "购买工程头盔", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage").shop.shopSetup:FindFirstChild("\228\186\148\233\135\145\229\186\151").items:FindFirstChild("\229\183\165\231\168\139\229\164\180\231\155\148"),
+        [3] = 255,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage").shop.scripted.Functions.shopFunction:InvokeServer(unpack(args))
+    print("已购买: 工程头盔")
+end)
+
+
+local AboutTab = Window:MakeTab({Name = "关于", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+AboutTab:AddLabel("您的注入器: " .. (identifyexecutor and identifyexecutor() or "未知"))
+AboutTab:AddLabel("您的用户名: " .. game.Players.LocalPlayer.Name)
+AboutTab:AddLabel("您的显示名称: " .. game.Players.LocalPlayer.DisplayName)
+AboutTab:AddLabel("您当前服务器的ID: " .. tostring(game.JobId))
+AboutTab:AddLabel("您的用户ID: " .. tostring(game.Players.LocalPlayer.UserId))
+AboutTab:AddLabel("您当前服务器的名称: " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+AboutTab:AddLabel("获取客户端ID: " .. game:GetService("RbxAnalyticsService"):GetClientId())
+
+local InteractionTab = Window:MakeTab({Name = "互动功能", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+local autoInteractEnabled = false
+local interactConnection = nil
+
+
+local ancprt = nil
+local function weldtp(part, cfr)
+    if not (part and part.Parent and part:IsA("BasePart") and (not part:IsGrounded())) then
+        return nil
+    end
+    if not (ancprt and ancprt.Parent and ancprt:IsA("BasePart") and ancprt:IsGrounded() and ancprt:IsDescendantOf(workspace)) then
+        for i, v in pairs(workspace:GetDescendants()) do
+            if v and v.Parent and v:IsA("BasePart") and v:IsGrounded() then
+                ancprt = v
+                break
+            end
+        end
+    end
+    if not ancprt then
+        ancprt = Instance.new("Part", workspace)
+        ancprt.Anchored = true
+        ancprt.Transparency = 1
+        ancprt.CanCollide = false
+        ancprt.Name = "weldtp part"
+    end
+    local weld = Instance.new("Weld")
+    weld.Part0 = part
+    weld.C0 = cfr:Inverse()
+    weld.Part1 = ancprt
+    weld.C1 = ancprt.CFrame:Inverse()
+    weld.Parent = workspace
+    game:GetService("RunService").RenderStepped:Wait()
+    pcall(function()
+        weld:Destroy()
+    end)
+end
+
+InteractionTab:AddToggle({
+    Name = "瞬间互动",
+    Default = false,
+    Callback = function(Value)
+        autoInteractEnabled = Value
+        
+        if autoInteractEnabled then
+            
+            interactConnection = game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
+                if not autoInteractEnabled then return end
+                
+                
+                prompt.HoldDuration = 0
+                fireproximityprompt(prompt)
+            end)
+            
+            OrionLib:MakeNotification({
+                Name = "互动系统",
+                Content = "瞬间互动已开启",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            if interactConnection then
+                interactConnection:Disconnect()
+                interactConnection = nil
+            end
+            
+            OrionLib:MakeNotification({
+                Name = "互动系统",
+                Content = "瞬间互动已关闭",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+local autoDeliveryEnabled = false
+local deliveryConnection = nil
+
+InteractionTab:AddToggle({
+    Name = "自动送货",
+    Default = false,
+    Callback = function(Value)
+        autoDeliveryEnabled = Value
+        
+        if autoDeliveryEnabled then
+            
+            deliveryConnection = coroutine.wrap(function()
+                while autoDeliveryEnabled do
+                    local function handleLocation(position)
+                        
+                        player.Character:SetPrimaryPartCFrame(CFrame.new(position))
+                        task.wait(0.1) 
+                        
+                        
+                        local prompts = {}
+                        for _, v in pairs(workspace:GetDescendants()) do
+                            if v:IsA("ProximityPrompt") and 
+                               (v.Parent.Position - position).Magnitude <= 10 then
+                                table.insert(prompts, v)
+                            end
+                        end
+                        
+                        
+                        if #prompts > 0 then
+                            for _, prompt in ipairs(prompts) do
+                                
+                                prompt.HoldDuration = 0
+                                prompt.MaxActivationDistance = math.huge
+                                
+                                
+                                fireproximityprompt(prompt)
+                                task.wait(0.1) 
+                            end
+                            return true
+                        end
+                        return false
+                    end
+                    
+                    
+                    local pos1 = Vector3.new(378.0057678222656, 45.98149871826172, -704.8350830078125)
+                    if handleLocation(pos1) then
+                        task.wait(0.1) 
+                        
+                        local pos2 = Vector3.new(1705.984375, 45.84669494628906, -826.5814819335938)
+                        if handleLocation(pos2) then
+                            
+                            task.spawn(function()
+                                while autoDeliveryEnabled do
+                                    local backpack = player:FindFirstChild("Backpack")
+                                    if backpack then
+                                        for _, tool in pairs(backpack:GetChildren()) do
+                                            if tool.Name == "箱子" then
+                                                tool.Parent = player.Character
+                                                break
+                                            end
+                                        end
+                                    end
+                                    task.wait(0.2) 
+                                end
+                            end)
+                        end
+                    end
+                    
+                    task.wait(0.1) 
+                end
+            end)
+            
+            
+            deliveryConnection()
+            
+            OrionLib:MakeNotification({
+                Name = "自动送货",
+                Content = "自动送货已开启",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            autoDeliveryEnabled = false
+            OrionLib:MakeNotification({
+                Name = "自动送货",
+                Content = "自动送货已关闭",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+local MoneyDisplayTab = Window:MakeTab({Name = "金钱显示", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+local displayEnabled = false
+local moneyGui = nil
+local updateConnection = nil
+local autoDepositEnabled = false
+local depositThreshold = 1000
+
+
+MoneyDisplayTab:AddTextbox({
+    Name = "设置自动转入阈值",
+    Default = "1000",
+    TextDisappear = false,
+    Callback = function(Value)
+        local newThreshold = tonumber(Value)
+        if newThreshold and newThreshold > 0 then
+            depositThreshold = newThreshold
+            OrionLib:MakeNotification({
+                Name = "自动转入",
+                Content = "阈值已设置为: " .. depositThreshold,
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+
+MoneyDisplayTab:AddToggle({
+    Name = "自动转入",
+    Default = false,
+    Callback = function(Value)
+        autoDepositEnabled = Value
+        OrionLib:MakeNotification({
+            Name = "自动转入",
+            Content = Value and "自动转入已开启，阈值："..depositThreshold or "自动转入已关闭",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+local function createMoneyDisplay()
+    
+    moneyGui = Instance.new("ScreenGui")
+    moneyGui.Name = "MoneyDisplay"
+    moneyGui.Parent = player:WaitForChild("PlayerGui")
+
+    
+    local displayFrame = Instance.new("Frame")
+    displayFrame.Name = "DisplayFrame"
+    displayFrame.Size = UDim2.new(0, 200, 0, 80)
+    displayFrame.Position = UDim2.new(1, -210, 0, 10)
+    displayFrame.BackgroundTransparency = 0.5
+    displayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    displayFrame.Parent = moneyGui
+
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = displayFrame
+
+    
+    local bankText = Instance.new("TextLabel")
+    bankText.Name = "BankText"
+    bankText.Size = UDim2.new(1, -10, 0.5, -5)
+    bankText.Position = UDim2.new(0, 5, 0, 5)
+    bankText.BackgroundTransparency = 1
+    bankText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    bankText.TextSize = 20
+    bankText.Font = Enum.Font.SourceSansBold
+    bankText.TextXAlignment = Enum.TextXAlignment.Right
+    bankText.Parent = displayFrame
+
+    
+    local walletText = Instance.new("TextLabel")
+    walletText.Name = "WalletText"
+    walletText.Size = UDim2.new(1, -10, 0.5, -5)
+    walletText.Position = UDim2.new(0, 5, 0.5, 0)
+    walletText.BackgroundTransparency = 1
+    walletText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    walletText.TextSize = 20
+    walletText.Font = Enum.Font.SourceSansBold
+    walletText.TextXAlignment = Enum.TextXAlignment.Right
+    walletText.Parent = displayFrame
+
+    return displayFrame, bankText, walletText
+end
+
+
+MoneyDisplayTab:AddToggle({
+    Name = "显示金钱",
+    Default = false,
+    Callback = function(Value)
+        displayEnabled = Value
+        
+        if displayEnabled then
+            local displayFrame, bankText, walletText = createMoneyDisplay()
+            
+            
+            local function updateMoneyDisplay()
+                local playerGui = player:WaitForChild("PlayerGui")
+                local moneyUI = playerGui:FindFirstChild("MoneyUI")
+                if moneyUI then
+                    local frame = moneyUI:FindFirstChild("Frame")
+                    if frame then
+                        
+                        local bankMoney = frame:FindFirstChild("BankMoney")
+                        if bankMoney then
+                            bankText.Text = "银行余额: " .. bankMoney.Text
+                        end
+                        
+                        
+                        local walletMoney = frame:FindFirstChild("WalletMoney")
+                        if walletMoney then
+                            walletText.Text = "钱包余额: " .. walletMoney.Text
+                            if autoDepositEnabled then
+                                local currentWallet = tonumber(walletMoney.Text)
+                                if currentWallet and currentWallet > depositThreshold then
+                                    
+                                    game:GetService("ReplicatedStorage").ATMDeposit:FireServer(currentWallet - depositThreshold)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            
+            updateConnection = game:GetService("RunService").RenderStepped:Connect(updateMoneyDisplay)
+            
+            
+            local function setupTextChangedListener()
+                local playerGui = player:WaitForChild("PlayerGui")
+                local moneyUI = playerGui:WaitForChild("MoneyUI")
+                local frame = moneyUI:WaitForChild("Frame")
+                
+                local bankMoney = frame:FindFirstChild("BankMoney")
+                bankMoney:GetPropertyChangedSignal("Text"):Connect(updateMoneyDisplay)
+                
+                local walletMoney = frame:FindFirstChild("WalletMoney")
+                walletMoney:GetPropertyChangedSignal("Text"):Connect(updateMoneyDisplay)
+            end
+            
+            pcall(setupTextChangedListener)
+            
+            OrionLib:MakeNotification({
+                Name = "金钱显示",
+                Content = "金钱显示已开启",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            if updateConnection then
+                updateConnection:Disconnect()
+                updateConnection = nil
+            end
+            
+            if moneyGui then
+                moneyGui:Destroy()
+                moneyGui = nil
+            end
+            
+            OrionLib:MakeNotification({
+                Name = "金钱显示",
+                Content = "金钱显示已关闭",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+InteractionTab:AddToggle({
+    Name = "自动范围互动",
+    Default = false,
+    Callback = function(Value)
+        autoRangeInteractEnabled = Value
+        
+        if autoRangeInteractEnabled then
+            
+            rangeInteractConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not autoRangeInteractEnabled then return end
+                
+                local character = player.Character
+                if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+                
+                
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") and 
+                       (v.Parent.Position - character.HumanoidRootPart.Position).Magnitude <= 10 then
+                        
+                        
+                        v.HoldDuration = 0
+                        v.MaxActivationDistance = math.huge
+                        v.RequiresLineOfSight = false
+                        
+                        
+                        fireproximityprompt(v)
+                        task.wait(0.5)
+                    end
+                end
+                
+                task.wait(0.5)
+            end)
+            
+            OrionLib:MakeNotification({
+                Name = "互动系统",
+                Content = "自动范围互动已开启",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            if rangeInteractConnection then
+                rangeInteractConnection:Disconnect()
+                rangeInteractConnection = nil
+            end
+            
+            OrionLib:MakeNotification({
+                Name = "互动系统",
+                Content = "自动范围互动已关闭",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+createButton(MainTab, "显示聊天栏", function()
+    game:GetService('Players').LocalPlayer.PlayerGui.Chat.Frame.ChatChannelParentFrame.Visible = true
+    game:GetService('Players').LocalPlayer.PlayerGui.Chat.Frame.ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, 40)
+    OrionLib:MakeNotification({
+        Name = "聊天栏",
+        Content = "聊天栏已显示",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+local PlayerInfoTab = Window:MakeTab({Name = "玩家信息", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+local playerCountDisplay = nil
+local nearestPlayerDisplay = nil
+local playerInfoEnabled = false
+local playerInfoConnection = nil
+
+local function createPlayerInfoDisplay()
+    
+    local infoGui = Instance.new("ScreenGui")
+    infoGui.Name = "PlayerInfoDisplay"
+    infoGui.Parent = player:WaitForChild("PlayerGui")
+
+    
+    local displayFrame = Instance.new("Frame")
+    displayFrame.Name = "InfoDisplayFrame"
+    displayFrame.Size = UDim2.new(0, 200, 0, 80)
+    displayFrame.Position = UDim2.new(1, -210, 0, 100)
+    displayFrame.BackgroundTransparency = 0.5
+    displayFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    displayFrame.Parent = infoGui
+
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = displayFrame
+
+    
+    playerCountDisplay = Instance.new("TextLabel")
+    playerCountDisplay.Name = "PlayerCountText"
+    playerCountDisplay.Size = UDim2.new(1, -10, 0.5, -5)
+    playerCountDisplay.Position = UDim2.new(0, 5, 0, 5)
+    playerCountDisplay.BackgroundTransparency = 1
+    playerCountDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+    playerCountDisplay.TextSize = 20
+    playerCountDisplay.Font = Enum.Font.SourceSansBold
+    playerCountDisplay.TextXAlignment = Enum.TextXAlignment.Right
+    playerCountDisplay.Parent = displayFrame
+
+    
+    nearestPlayerDisplay = Instance.new("TextLabel")
+    nearestPlayerDisplay.Name = "NearestPlayerText"
+    nearestPlayerDisplay.Size = UDim2.new(1, -10, 0.5, -5)
+    nearestPlayerDisplay.Position = UDim2.new(0, 5, 0.5, 0)
+    nearestPlayerDisplay.BackgroundTransparency = 1
+    nearestPlayerDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nearestPlayerDisplay.TextSize = 20
+    nearestPlayerDisplay.Font = Enum.Font.SourceSansBold
+    nearestPlayerDisplay.TextXAlignment = Enum.TextXAlignment.Right
+    nearestPlayerDisplay.Parent = displayFrame
+
+    return infoGui
+end
+
+PlayerInfoTab:AddToggle({
+    Name = "显示玩家信息",
+    Default = false,
+    Callback = function(Value)
+        playerInfoEnabled = Value
+        
+        if playerInfoEnabled then
+            local infoGui = createPlayerInfoDisplay()
+            
+            
+            local function updatePlayerInfo()
+                if not playerInfoEnabled then return end
+                
+                local playerCount = #game.Players:GetPlayers() - 1  
+                playerCountDisplay.Text = "当前服务器人数: " .. playerCount
+
+                local nearestDistance = math.huge
+                local nearestPlayer = nil
+                local myCharacter = player.Character
+                if myCharacter and myCharacter:FindFirstChild("HumanoidRootPart") then
+                    local myPosition = myCharacter.HumanoidRootPart.Position
+                    
+                    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+                        if otherPlayer ~= player then
+                            local otherCharacter = otherPlayer.Character
+                            if otherCharacter and otherCharacter:FindFirstChild("HumanoidRootPart") then
+                                local distance = (otherCharacter.HumanoidRootPart.Position - myPosition).Magnitude
+                                if distance < nearestDistance then
+                                    nearestDistance = distance
+                                    nearestPlayer = otherPlayer
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if nearestPlayer then
+                    nearestPlayerDisplay.Text = string.format(
+                        "最近玩家: %s (%.1f米)",
+                        nearestPlayer.Name,
+                        nearestDistance
+                    )
+                else
+                    nearestPlayerDisplay.Text = "附近没有其他玩家"
+                end
+            end
+
+            
+            playerInfoConnection = game:GetService("RunService").RenderStepped:Connect(updatePlayerInfo)
+            
+            OrionLib:MakeNotification({
+                Name = "玩家信息",
+                Content = "玩家信息显示已开启",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            if playerInfoConnection then
+                playerInfoConnection:Disconnect()
+                playerInfoConnection = nil
+            end
+            
+            local playerGui = player:FindFirstChild("PlayerGui")
+            if playerGui then
+                local infoGui = playerGui:FindFirstChild("PlayerInfoDisplay")
+                if infoGui then
+                    infoGui:Destroy()
+                end
+            end
+            
+            OrionLib:MakeNotification({
+                Name = "玩家信息",
+                Content = "玩家信息显示已关闭",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})

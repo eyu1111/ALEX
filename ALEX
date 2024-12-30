@@ -71,27 +71,59 @@ createButton(MainTab, "存款", function() handleTransaction("ATMDeposit") end)
 
 
 local noclipEnabled = false
+local noclipConnection = nil
 
 createButton(MainTab, "穿墙 开/关", function()
     noclipEnabled = not noclipEnabled
-    local connection
+    
     if noclipEnabled then
-        connection = game:GetService("RunService").Stepped:Connect(function()
-            for _, v in pairs(player.Character:GetDescendants()) do
-                if v:IsA("BasePart") and v.CanCollide then
-                    v.CanCollide = false
+        -- 创建新的连接
+        if noclipConnection then
+            noclipConnection:Disconnect()
+        end
+        
+        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+            if not noclipEnabled then return end
+            
+            local character = player.Character
+            if not character then return end
+            
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
                 end
             end
         end)
-        print("穿墙 已启用")
+        
+        OrionLib:MakeNotification({
+            Name = "穿墙系统",
+            Content = "穿墙已启用",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
     else
-        connection:Disconnect()
-        for _, v in pairs(player.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = true
+        -- 断开连接
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        
+        -- 恢复碰撞
+        local character = player.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
-        print("穿墙 已禁用")
+        
+        OrionLib:MakeNotification({
+            Name = "穿墙系统",
+            Content = "穿墙已禁用",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
     end
 end)
 
@@ -115,20 +147,24 @@ MainTab:AddTextbox({
 local espEnabled = false
 local espConnection = nil
 local espObjects = {}
+local espUpdateConnection = nil
 
 createButton(MainTab, "透视玩家", function()
     espEnabled = not espEnabled
     
     if espEnabled then
-        
+        -- 清理旧的ESP对象
         for _, esp in pairs(espObjects) do
             if esp.gui then
                 esp.gui:Destroy()
             end
+            if esp.connection then
+                esp.connection:Disconnect()
+            end
         end
         espObjects = {}
         
-        
+        -- 创建ESP函数
         local function createESP(targetPlayer)
             if targetPlayer == player then return end
             
@@ -139,7 +175,10 @@ createButton(MainTab, "透视玩家", function()
             }
             
             local function updateESP()
-                if not esp.gui then
+                if not espEnabled then return end
+                
+                -- 如果GUI不存在，创建新的
+                if not esp.gui or not esp.gui.Parent then
                     esp.gui = Instance.new("BillboardGui")
                     local textLabel = Instance.new("TextLabel")
                     
@@ -147,12 +186,14 @@ createButton(MainTab, "透视玩家", function()
                     esp.gui.Size = UDim2.new(0, 200, 0, 50)
                     esp.gui.StudsOffset = Vector3.new(0, 2, 0)
                     esp.gui.AlwaysOnTop = true
+                    esp.gui.MaxDistance = 500
                     
                     textLabel.Parent = esp.gui
                     textLabel.Size = UDim2.new(1, 0, 1, 0)
                     textLabel.BackgroundTransparency = 1
                     textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    textLabel.TextStrokeTransparency = 0.5
+                    textLabel.TextStrokeTransparency = 0
+                    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
                     textLabel.TextScaled = true
                 end
                 
@@ -171,31 +212,32 @@ createButton(MainTab, "透视玩家", function()
                                 distance,
                                 humanoid.Health)
                         end
-                        esp.gui.Parent = humanoidRootPart
+                        esp.gui.Parent = game:GetService("CoreGui")
                     end
                 end
             end
             
-            
+            -- 初始更新
             updateESP()
             
-            
+            -- 监听角色变化
             esp.connection = targetPlayer.CharacterAdded:Connect(updateESP)
             
             espObjects[targetPlayer.Name] = esp
+            return esp
         end
         
-        
+        -- 为现有玩家创建ESP
         for _, p in pairs(game.Players:GetPlayers()) do
             createESP(p)
         end
         
-        
+        -- 监听新玩家加入
         espConnection = game.Players.PlayerAdded:Connect(function(newPlayer)
             createESP(newPlayer)
         end)
         
-        
+        -- 监听玩家离开
         game.Players.PlayerRemoving:Connect(function(leavingPlayer)
             local esp = espObjects[leavingPlayer.Name]
             if esp then
@@ -205,28 +247,31 @@ createButton(MainTab, "透视玩家", function()
             end
         end)
         
+        -- 创建更新循环
+        if espUpdateConnection then
+            espUpdateConnection:Disconnect()
+        end
         
-        spawn(function()
-            while espEnabled do
-                for _, esp in pairs(espObjects) do
-                    local character = esp.player.Character
-                    if character then
-                        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-                        local humanoid = character:FindFirstChildOfClass("Humanoid")
-                        if humanoidRootPart and humanoid and esp.gui then
-                            local textLabel = esp.gui:FindFirstChildOfClass("TextLabel")
-                            if textLabel then
-                                local distance = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and 
-                                    (player.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude or 0
-                                textLabel.Text = string.format("%s\n距离: %.1f\n生命值: %.0f", 
-                                    esp.player.Name, 
-                                    distance,
-                                    humanoid.Health)
-                            end
+        espUpdateConnection = game:GetService("RunService").RenderStepped:Connect(function()
+            if not espEnabled then return end
+            
+            for _, esp in pairs(espObjects) do
+                local character = esp.player.Character
+                if character then
+                    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    if humanoidRootPart and humanoid and esp.gui then
+                        local textLabel = esp.gui:FindFirstChildOfClass("TextLabel")
+                        if textLabel then
+                            local distance = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and 
+                                (player.Character.HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude or 0
+                            textLabel.Text = string.format("%s\n距离: %.1f\n生命值: %.0f", 
+                                esp.player.Name, 
+                                distance,
+                                humanoid.Health)
                         end
                     end
                 end
-                wait(0.1) 
             end
         end)
         
@@ -237,16 +282,22 @@ createButton(MainTab, "透视玩家", function()
             Time = 5
         })
     else
-        
+        -- 清理所有ESP对象
         for _, esp in pairs(espObjects) do
             if esp.gui then esp.gui:Destroy() end
             if esp.connection then esp.connection:Disconnect() end
         end
         espObjects = {}
         
+        -- 断开所有连接
         if espConnection then
             espConnection:Disconnect()
             espConnection = nil
+        end
+        
+        if espUpdateConnection then
+            espUpdateConnection:Disconnect()
+            espUpdateConnection = nil
         end
         
         OrionLib:MakeNotification({

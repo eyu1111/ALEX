@@ -320,7 +320,8 @@ local TeleportLocations = {
     ["公寓"] = Vector3.new(1506.19, 45.70, -886.83),
     ["下水道"] = Vector3.new(2407.21, -75.69, -1543.95),
     ["月跑便利店"] = Vector3.new(366.2451171875, 45.988121032714844, -818.7373657226562),
-    ["老奶奶五金店"] = Vector3.new(1206.89892578125, 45.92694854736328, -729.1337280273438)
+    ["老奶奶五金店"] = Vector3.new(1206.89892578125, 45.92694854736328, -729.1337280273438),
+    ["黑市"] = Vector3.new(1052.6270751953125, 44.72265625, -1533.6475830078125)
 }
 
 local selectedLocation
@@ -328,7 +329,7 @@ local selectedLocation
 TeleportTab:AddDropdown({
     Name = "选择传送地点",
     Default = "请选择一个地点",
-    Options = {"人民影剧院", "拳击馆", "顺天出租车有限公司大门", "大酒店", "公寓", "下水道", "月跑便利店", "老奶奶五金店"},
+    Options = {"人民影剧院", "拳击馆", "顺天出租车有限公司大门", "大酒店", "公寓", "下水道", "月跑便利店", "老奶奶五金店", "黑市"},
     Callback = function(option)
         selectedLocation = TeleportLocations[option]
         print("已选择传送地点: " .. option)
@@ -1165,3 +1166,276 @@ PlayerInfoTab:AddToggle({
         end
     end
 })
+
+
+local BlackMarketTab = Window:MakeTab({Name = "黑市购物", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+
+
+createButton(BlackMarketTab, "购买撬锁器 [550]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\230\146\172\233\148\129\229\153\168"),
+        [3] = 550,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 撬锁器")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买撬锁器",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买步枪子弹 [750]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\230\173\165\230\158\170\229\188\185\232\141\175"),
+        [3] = 750,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 步枪子弹")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买步枪子弹",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买霰弹枪弹药 [400]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\233\156\176\229\188\185\230\158\170\229\188\185\232\141\175"),
+        [3] = 400,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 霰弹枪弹药")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买霰弹枪弹药",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买钢珠 [50]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\233\146\162\231\143\160"),
+        [3] = 50,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 钢珠")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买钢珠",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买防刺衣 [1500]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\233\152\178\229\136\186\232\161\163"),
+        [3] = 1500,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 防刺衣")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买防刺衣",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买手枪弹药 [300]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\230\137\139\230\158\170\229\188\185\232\141\175"),
+        [3] = 300,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 手枪弹药")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买手枪弹药",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买摩托头盔 [700]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\230\145\169\230\137\152\229\164\180\231\155\148"),
+        [3] = 700,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 摩托头盔")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买摩托头盔",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买AK-47 [12000]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("AK-47"),
+        [3] = 12000,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: AK-47")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买AK-47",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买M1911A1手枪 [6000]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("M1911A1"),
+        [3] = 6000,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: M1911A1手枪")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买M1911A1手枪",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买土枪 [1500]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\229\156\159\230\158\170"),
+        [3] = 1500,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 土枪")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买土枪",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买贝雷塔M9 [4500]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\232\180\157\233\155\183\229\161\148M9"),
+        [3] = 4500,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 贝雷塔M9")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买贝雷塔M9",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买56冲无托 [9500]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("56\229\134\178 \230\151\160\230\137\152"),
+        [3] = 9500,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 56冲无托")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买56冲无托",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买56半 [14500]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("56\229\141\138"),
+        [3] = 14500,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 56半")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买56半",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买双管猎枪 [9000]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("\229\143\140\231\174\161\231\140\142\230\158\170"),
+        [3] = 9000,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: 双管猎枪")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买双管猎枪",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)
+
+
+createButton(BlackMarketTab, "购买M16 [17000]", function()
+    local args = {
+        [1] = "shopAction",
+        [2] = game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("shopSetup"):WaitForChild("\233\187\145\229\184\130"):WaitForChild("items"):WaitForChild("M16"),
+        [3] = 17000,
+        [4] = "wallet"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("shop"):WaitForChild("scripted"):WaitForChild("Functions"):WaitForChild("shopFunction"):InvokeServer(unpack(args))
+    print("已购买: M16")
+    OrionLib:MakeNotification({
+        Name = "黑市购物",
+        Content = "已购买M16",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end)

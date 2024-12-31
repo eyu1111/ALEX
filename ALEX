@@ -1,3 +1,49 @@
+local player = game.Players.LocalPlayer
+local username = player.Name
+
+
+local whitelist = {
+    "Gesen2001",
+    "yukjm2222"
+}
+
+
+local function checkWhitelist()
+    for _, whitelistedName in ipairs(whitelist) do
+        if username == whitelistedName then
+            return true
+        end
+    end
+    return false
+end
+
+
+if not checkWhitelist() then
+    
+    local StarterGui = game:GetService("StarterGui")
+    StarterGui:SetCore("SendNotification", {
+        Title = "白名单验证",
+        Text = "您未通过该脚本的白名单，请联系作者或合作人！！！",
+        Duration = 5
+    })
+    
+    wait(2) 
+    
+    
+    game.Players.LocalPlayer:Kick("您未通过该脚本的白名单，请联系作者或合作人！！！\n请添加微信: wby11116666 获取白名单")
+    return
+end
+
+
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "白名单验证",
+    Text = "验证通过，正在加载脚本...",
+    Duration = 5
+})
+
+wait(2) 
+
 local OrionLib
 local success, err = pcall(function()
     OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
@@ -6,9 +52,6 @@ if not success then
     error("无法加载OrionLib: " .. err)
     return
 end
-
-local player = game.Players.LocalPlayer
-local username = player.Name
 
 OrionLib:MakeNotification({
     Name = "欢迎使用",
@@ -77,7 +120,7 @@ createButton(MainTab, "穿墙 开/关", function()
     noclipEnabled = not noclipEnabled
     
     if noclipEnabled then
-        -- 创建新的连接
+        
         if noclipConnection then
             noclipConnection:Disconnect()
         end
@@ -102,13 +145,13 @@ createButton(MainTab, "穿墙 开/关", function()
             Time = 5
         })
     else
-        -- 断开连接
+        
         if noclipConnection then
             noclipConnection:Disconnect()
             noclipConnection = nil
         end
         
-        -- 恢复碰撞
+        
         local character = player.Character
         if character then
             for _, part in ipairs(character:GetDescendants()) do
@@ -153,7 +196,7 @@ createButton(MainTab, "透视玩家", function()
     espEnabled = not espEnabled
     
     if espEnabled then
-        -- 清理旧的ESP对象
+        
         for _, esp in pairs(espObjects) do
             if esp.gui then
                 esp.gui:Destroy()
@@ -164,7 +207,7 @@ createButton(MainTab, "透视玩家", function()
         end
         espObjects = {}
         
-        -- 创建ESP函数
+        
         local function createESP(targetPlayer)
             if targetPlayer == player then return end
             
@@ -177,7 +220,7 @@ createButton(MainTab, "透视玩家", function()
             local function updateESP()
                 if not espEnabled then return end
                 
-                -- 如果GUI不存在，创建新的
+                
                 if not esp.gui or not esp.gui.Parent then
                     esp.gui = Instance.new("BillboardGui")
                     local textLabel = Instance.new("TextLabel")
@@ -217,27 +260,27 @@ createButton(MainTab, "透视玩家", function()
                 end
             end
             
-            -- 初始更新
+            
             updateESP()
             
-            -- 监听角色变化
+            
             esp.connection = targetPlayer.CharacterAdded:Connect(updateESP)
             
             espObjects[targetPlayer.Name] = esp
             return esp
         end
         
-        -- 为现有玩家创建ESP
+        
         for _, p in pairs(game.Players:GetPlayers()) do
             createESP(p)
         end
         
-        -- 监听新玩家加入
+        
         espConnection = game.Players.PlayerAdded:Connect(function(newPlayer)
             createESP(newPlayer)
         end)
         
-        -- 监听玩家离开
+        
         game.Players.PlayerRemoving:Connect(function(leavingPlayer)
             local esp = espObjects[leavingPlayer.Name]
             if esp then
@@ -247,7 +290,7 @@ createButton(MainTab, "透视玩家", function()
             end
         end)
         
-        -- 创建更新循环
+        
         if espUpdateConnection then
             espUpdateConnection:Disconnect()
         end
@@ -282,14 +325,14 @@ createButton(MainTab, "透视玩家", function()
             Time = 5
         })
     else
-        -- 清理所有ESP对象
+        
         for _, esp in pairs(espObjects) do
             if esp.gui then esp.gui:Destroy() end
             if esp.connection then esp.connection:Disconnect() end
         end
         espObjects = {}
         
-        -- 断开所有连接
+        
         if espConnection then
             espConnection:Disconnect()
             espConnection = nil
